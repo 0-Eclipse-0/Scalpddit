@@ -9,9 +9,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import sqlite3
 
-SEARCH_QUERY_1 = "ysl" # Item name
-SEARCH_QUERY_2 = "[wtb] # Extra tag (leave blank to ignore)
-LINK = "https://www.reddit.com/r/fragranceswap/new/"
+SEARCH_QUERY_1 = "" # Item name
+SEARCH_QUERY_2 = "" # Extra tag (leave blank to ignore)
+LINK = ""
 SLEEP_TIME = 10 # Time to wait before checking again (Seconds)
 TARGET_EMAIL = ""
 SENDER_EMAIL = ""
