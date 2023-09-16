@@ -108,12 +108,12 @@ class Database:
         self.cursor = self.database.cursor()
 
     def insertPost(self, post, title, link): # Insert post int db after validation
-        insertString = "INSERT INTO " + post + " (title, link) VALUES (?, ?)"
+        insertString = "INSERT INTO " + ''.join(post.split()) + " (title, link) VALUES (?, ?)"
 
         self.cursor.execute(insertString, (title, link))
 
     def createTable(self, post): # Create post table if it doesn't exist
-        tableString = "CREATE TABLE IF NOT EXISTS " +  post + " (title TEXT, link TEXT);"
+        tableString = "CREATE TABLE IF NOT EXISTS " +  ''.join(post.split()) + " (title TEXT, link TEXT);"
 
         self.cursor.execute(tableString)
 
@@ -124,7 +124,7 @@ class Database:
             print(row)
 
     def entryExists(self, post, title, link): # Output if entry already exists
-        locateString = "SELECT title, link FROM " + post + " WHERE title = ? AND link = ?"
+        locateString = "SELECT title, link FROM " + ''.join(post.split()) + " WHERE title = ? AND link = ?"
 
         self.cursor.execute(locateString, (title, link))
         fetchResult = self.cursor.fetchall()
@@ -167,7 +167,14 @@ if __name__ == '__main__':
     db = Database()
     notification = Notification(SENDER_EMAIL, TARGET_EMAIL)
 
-    print("Running Scalper...")
+    print(f"""Running Scalper...
+    Arguments:
+    \t- Search Query 1: {SEARCH_QUERY_1 if SEARCH_QUERY_1 else "N/A"}
+    \t- Search Query 2: {SEARCH_QUERY_2 if SEARCH_QUERY_2 else "N/A"}
+    \t- Link: {LINK}
+    \t- Target Email: {TARGET_EMAIL}
+    \t- Sender Email: {SENDER_EMAIL}
+          """)
 
     try:
         while True:
@@ -196,5 +203,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Exiting...")
         db.database.close()
-
 
