@@ -12,7 +12,6 @@
 ##### Tips
 - To clear the database delete posts.db
 - Second search query can be left blank (added for specificity purposes)
-- Both search queries can be left blank to be notified of all new posts
 - Line 187 can be commented out to avoid emails
 
 ### Running
