@@ -134,7 +134,7 @@ class Database:
 def startProgram(db):
     newPosts = []
 
-    db.createTable(SEARCH_QUERY)
+    db.createTable(SEARCH_QUERY_1)
 
     print("\rWaiting for search to complete (Approx: 40s)", end="")
 
@@ -143,9 +143,9 @@ def startProgram(db):
 
     # Parse posts from sourced list
     for i in parsePosts(browser.getPosts()):
-        if db.entryExists(SEARCH_QUERY, i[0], i[1]):  # Add to database if not found
+        if db.entryExists(SEARCH_QUERY_1, i[0], i[1]):  # Add to database if not found
             newPosts.append(i)
-            db.insertPost(SEARCH_QUERY, i[0], i[1])
+            db.insertPost(SEARCH_QUERY_1, i[0], i[1])
             db.database.commit()
     browser.end()
 
