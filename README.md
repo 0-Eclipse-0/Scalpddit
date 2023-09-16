@@ -12,7 +12,7 @@
 ##### Tips
 - To clear the database delete posts.db
 - Second search query can be left blank (added for specificity purposes)
-- Line 187 can be commented out to avoid emails
+- Line 191 can be commented out to avoid emails
 
 ### Running
 ![](https://github.com/0-Eclipse-0/Scalpddit/blob/34eb8f18049bd12f517ca5186fda451cf967f931/images/running.gif)
