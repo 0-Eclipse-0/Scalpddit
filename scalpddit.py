@@ -10,13 +10,13 @@ from email.mime.multipart import MIMEMultipart
 import sqlite3
 from unidecode import unidecode
 
-CONTENT_QUERY = "millesime imperial" # Content query
-TITLE_QUERY = "[wts]" # title query (leave blank to ignore)
-LINK = "https://www.reddit.com/r/fragranceswap/new/"
+CONTENT_QUERY = "" # Content query
+TITLE_QUERY = "" # title query (leave blank to ignore)
+LINK = ""
 SLEEP_TIME = 1200 # Time to wait before checking again (Seconds)
-TARGET_EMAIL = "matthew.hambrecht@icloud.com"
-SENDER_EMAIL = "scalpnotifier@gmail.com"
-APP_PASSWORD = "acnkxzvjoqaqjoxl"
+TARGET_EMAIL = ""
+SENDER_EMAIL = ""
+APP_PASSWORD = ""
 
 class Scalper:
     def __init__(self, url):
