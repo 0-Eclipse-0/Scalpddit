@@ -8,63 +8,66 @@ import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import sqlite3
+from unidecode import unidecode
 
-SEARCH_QUERY_1 = "" # Item name
-SEARCH_QUERY_2 = "" # Extra tag (leave blank to ignore)
-LINK = ""
-SLEEP_TIME = 10 # Time to wait before checking again (Seconds)
-TARGET_EMAIL = ""
-SENDER_EMAIL = ""
-APP_PASSWORD = ""
+CONTENT_QUERY = "millesime imperial" # Content query
+TITLE_QUERY = "[wts]" # title query (leave blank to ignore)
+LINK = "https://www.reddit.com/r/fragranceswap/new/"
+SLEEP_TIME = 1200 # Time to wait before checking again (Seconds)
+TARGET_EMAIL = "matthew.hambrecht@icloud.com"
+SENDER_EMAIL = "scalpnotifier@gmail.com"
+APP_PASSWORD = "acnkxzvjoqaqjoxl"
 
 class Scalper:
     def __init__(self, url):
         # Initialize headless browser
         chromeArgs = webdriver.ChromeOptions()
+        chromeArgs.add_argument('no-sandbox')
         chromeArgs.add_argument('headless')
 
         self.target = url
         self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chromeArgs)
+        self.posts = []
 
         try:
             self.driver.get(url)
         except Exception as e:
-            print(e)
+            print("Error connecting to site.. Are you offline?")
 
     # Modify and parse source for useful information
     def getSource(self):
         # Scroll to get all posts
-        for i in range(1, 10):
+        for i in range(1, 5):
             self.driver.execute_script(
                 "window.scrollTo(0, document.body.scrollHeight);")
 
-            # Remove price deductions
-
-
             sleep(4)
-
-        # Javascript to remove price deductions
-        self.driver.execute_script(
-            """
-            const deductions = document.getElementsByClassName("xmqliwb");
-
-            for (let i = deductions.length - 1; i >= 0; i--) {
-                deductions[i].parentNode.removeChild(deductions[i]);
-            }
-            """
-        );
 
     # Get information from each post
     def getPosts(self):
-        posts = []
-
         soup = BeautifulSoup(self.driver.page_source, 'lxml')
 
         for post in soup.findAll('shreddit-post'):
             # innerText = post.getText(separator=':').split(':')
-            innerText = [post.find('div', attrs={"slot": "title"}).getText().strip(),
-                         "https://reddit.com" + post.find('a', attrs={"slot": "full-post-link"})['href']]
-            posts.append(innerText)
+            innerText = [unidecode(post.find('div', attrs={"slot": "title"}).getText().strip()),
+                         "https://reddit.com" + post.find('a', attrs={"slot": "full-post-link"})['href'],
+                         unidecode(post.find('div', attrs={"slot": "text-body"}).getText())]
+            self.posts.append(innerText)
+
+        return self.posts
+
+    # Retrieve only posts fitting criteria
+    def parsePosts(self, original):
+        posts = []
+
+        for post in range(len(original)):
+            original[post][0].replace('\'', "").replace('\"', "")  # Prevent SQL error
+            original[post][2].replace('\'', "").replace('\"', "")
+
+            # Verify post contains queries
+            if original[post][0].lower().__contains__(TITLE_QUERY) and \
+                    original[post][2].lower().__contains__(CONTENT_QUERY):
+                posts.append(original[post])
 
         return posts
 
@@ -80,7 +83,7 @@ class Notification():
         self.message["From"] = senderAddress
         self.message["To"] = targetAddress
 
-        self.emailPass = APP_PASSWORD  # Import
+        self.emailPass = APP_PASSWORD
         self.senderAddress = senderAddress
         self.targetAddress = targetAddress
 
@@ -97,9 +100,9 @@ class Notification():
         content = "Post(s) Found:"
 
         for i in posts:
-            content += "\n\t\t• %s" % (', '.join(i[:len(i)]))
+            content += "\n\t\t• " + i[0] + ", " + i[1]
 
-        self.message.attach(MIMEText(content, "plain"))  # Add html compatibility # TODO
+        self.message.attach(MIMEText(content, "plain"))
         self.send()
 
 class Database:
@@ -131,46 +134,14 @@ class Database:
 
         return len(fetchResult) == 0  # true if not found
 
-def startProgram(db):
-    newPosts = []
-
-    db.createTable(SEARCH_QUERY_1)
-
-    print("\rWaiting for search to complete (Approx: 40s)", end="")
-
-    browser = Scalper(LINK)
-    browser.getSource()
-
-    # Parse posts from sourced list
-    for i in parsePosts(browser.getPosts()):
-        if db.entryExists(SEARCH_QUERY_1, i[0], i[1]):  # Add to database if not found
-            newPosts.append(i)
-            db.insertPost(SEARCH_QUERY_1, i[0], i[1])
-            db.database.commit()
-    browser.end()
-
-    return newPosts
-
-def parsePosts(original):
-    posts = []
-
-    for post in range(len(original)):
-        original[post][1].replace('\'', "").replace('\"', "") # Prevent SQL error
-
-        if original[post][0].lower().__contains__(SEARCH_QUERY_1) and \
-                original[post][0].lower().__contains__(SEARCH_QUERY_2):
-            posts.append(original[post])
-
-    return posts
-
 if __name__ == '__main__':
     db = Database()
     notification = Notification(SENDER_EMAIL, TARGET_EMAIL)
 
     print(f"""Running Scalper...
     Arguments:
-    \t- Search Query 1: {SEARCH_QUERY_1 if SEARCH_QUERY_1 else "N/A"}
-    \t- Search Query 2: {SEARCH_QUERY_2 if SEARCH_QUERY_2 else "N/A"}
+    \t- Title Query: {TITLE_QUERY if TITLE_QUERY else "N/A"}
+    \t- Content Query: {CONTENT_QUERY if CONTENT_QUERY else "N/A"}
     \t- Link: {LINK}
     \t- Target Email: {TARGET_EMAIL}
     \t- Sender Email: {SENDER_EMAIL}
@@ -178,20 +149,36 @@ if __name__ == '__main__':
 
     try:
         while True:
-            posts = startProgram(db)
+            newPosts = []
+
+            db.createTable(TITLE_QUERY)
+
+            print("\rWaiting for search to complete (Approx: 40s)", end="")
+
+            browser = Scalper(LINK)
+            browser.getSource()
+
+            # Parse posts from sourced list
+            for i in browser.parsePosts(browser.getPosts()):
+                if db.entryExists(TITLE_QUERY, i[0], i[1]):  # Add to database if not found
+                    newPosts.append(i)
+                    db.insertPost(TITLE_QUERY, i[0], i[1])
+                    db.database.commit()
+            browser.end()
 
             # Output newly found posts
-            if posts == []:
-                print("\rNo new posts found!")
+            if newPosts == []:
+                print("\rNo new posts found!\t\t\t")
             else:
-                print("\rAll new posts:")
+                print("\rAll new posts:\t\t\t")
 
 
-                for i in posts:
-                    print("\t\t• " + ", ".join(i))
+                for i in newPosts:
+                    print("\t\t• " + i[0] + ", " + i[1])
 
                 # Send email
-                notification.email(posts)
+                notification.email(newPosts)
+                print()
 
             # Wait Timer
             i = 0
